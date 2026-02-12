@@ -25,26 +25,50 @@
     <div id="data-container"></div>
 
     <script>
-        // Load JSON data
-        d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTBQyz85rNI_H2ggOJzro19uGCFCRqrJHJXdFGlyq6aCxo6qlBn66pK1Bgn6ee2VZW_YGPprJIikyaU/pub?gid=755898939&single=true&output=csv").then(function(data) {
+        // --- 1. CHARGEMENT DES DONNÉES ---
+        d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTBQyz85rNI_H2ggOJzro19uGCFCRqrJHJXdFGlyq6aCxo6qlBn66pK1Bgn6ee2VZW_YGPprJIikyaU/pub?gid=755898939&single=true&output=csv")
+        .then(function(data) {
             var container = d3.select("#data-container");
+            
+            // Création des blocs étudiants
             let divEtu = container.selectAll("div").data(data).enter().append("div")
-                    .attr("id", d => "etu" + d["Votre identifiant omeka"]).attr("class", "etu");
+                .attr("id", d => "etu" + d["Votre identifiant omeka"])
+                .attr("class", "etu");
+            
             divEtu.append("h2").text(d => d["Votre nom et prénom"]);
             
-            let liensEtu = divEtu.append('div').attr('id', (d, i) => "liensEtu" + i).attr('class', 'liens');         
-            liensEtu.append("a").attr("href", d => "https://github.com/" + d["Votre login github"] + "/GSI2_SystemInfo_25-26/").text(d => d["Votre login github"] + " sources exercices");
-            liensEtu.append("a").attr("href", d => "https://" + d["Votre login github"] + ".github.io/GSI2_SystemInfo_25-26/test.html").text(d => "Page Test");
-            liensEtu.append('div').append('button').text('Voir les arguments').on('click', showArguments);
-        }).catch(error => console.error('Error loading data:', error));
+            // Liens étudiants
+            let liensEtu = divEtu.append('div').attr('class', 'liens');         
+            liensEtu.append("a")
+                .attr("href", d => "https://github.com/" + d["Votre login github"] + "/GSI2_SystemInfo_25-26/")
+                .text(d => d["Votre login github"] + " sources");
+            liensEtu.append("a")
+                .attr("href", d => "https://" + d["Votre login github"] + ".github.io/GSI2_SystemInfo_25-26/test.html")
+                .text(d => "Page Test");
+            
+            liensEtu.append('div').append('button')
+                .text('Voir les arguments')
+                .on('click', showArguments);
 
+        }).catch(error => console.error('Erreur chargement CSV:', error));
+
+        // --- 2. AFFICHAGE DES ARGUMENTS ---
         function showArguments(e, d) {
+            // Nettoyage
             d3.select('#etu' + d["Votre identifiant omeka"]).select('ul').remove();
-            d3.json("https://argument.generateur.art/api/items?resource_class_id=107&owner_id=" + d["Votre identifiant omeka"]).then(rs => {
+            
+            // Récupération API
+            d3.json("https://argument.generateur.art/api/items?resource_class_id=107&owner_id=" + d["Votre identifiant omeka"])
+            .then(rs => {
                 let ulEtuArgu = d3.select('#etu' + d["Votre identifiant omeka"]).append('ul');
-                let argus = ulEtuArgu.selectAll('li').data(rs).enter().append('li').attr('class', 'argu').attr('id', d => 'argu' + d['o:id']);
+                let argus = ulEtuArgu.selectAll('li').data(rs).enter().append('li')
+                    .attr('class', 'argu')
+                    .attr('id', d => 'argu' + d['o:id']);
                 
+                // Info et boutons
                 let liensArgu = argus.append('div').attr('class', 'liens');         
+                
+                // Propriétés
                 let propsArgu = argus.append('div').attr('class', 'props');
                 let props = ["o:created", "dcterms:description", "argu:hasFamilleArgu", "argu:hasRegistre", "dcterms:subject"];
                 
@@ -52,67 +76,92 @@
                     .selectAll('p').data((d) => Array.isArray(d.d[d.p]) ? d.d[d.p] : [d.d[d.p]]).enter().append('p')
                     .html(d => d ? '<span>' + ((d.property_label ? d.property_label + ' = ' : '') + (d.display_title || d["@value"])) + '</span>' : 'vide');
 
-                argus.append('div').attr('class', 'liens').selectAll('span').data(d => d["argu:generateur"] ? d["argu:generateur"].slice(1) : []).enter().append('span')
+                // Générateur info
+                argus.append('div').attr('class', 'liens').selectAll('span')
+                    .data(d => d["argu:generateur"] ? d["argu:generateur"].slice(1) : []).enter().append('span')
                     .html(d => d.type == 'resource' ? "<a target='_blank' href='" + d['@id'].replace('api/items', 'admin/item') + "'>" + d.display_title + "</a>" : d['@value']);
 
+                // Boutons d'action
                 liensArgu.append('a').attr('href', d => 'https://argument.generateur.art/admin/item/' + d['o:id']).attr('target', '_blank').text(d => d["o:title"]);
                 liensArgu.append('button').text('Générer un argument').on('click', genereArgument);
                 liensArgu.append('button').text('Générer la carte des arguments').on('click', genereCartoArgument);
+                
+                // Conteneur résultat
                 argus.append('div').attr('id', d => "resultArgu" + d['o:id']).attr('class', 'result');
             });
         }
 
+        // --- 3. GÉNÉRATION TEXTUELLE ---
         function genereArgument(e, arg) {
             let argu = d3.select('#resultArgu' + arg['o:id']);
             argu.select('div').remove();            
             let divTxtArgu = argu.append('div');
+            
             divTxtArgu.selectAll('span').data(arg["argu:generateur"]).enter().append('span')
                 .attr('id', (g, i) => { g.idSpan = 'span' + arg['o:id'] + '_' + i; return g.idSpan; })
-                .text((g, i) => { if (i > 0) { if (g.type == 'literal') return g['@value']; if (g.type == 'resource') getAleaDescription(g); } });
+                .text((g, i) => { 
+                    if (i > 0) { 
+                        if (g.type == 'literal') return g['@value']; 
+                        if (g.type == 'resource') getAleaDescription(g); 
+                    } 
+                });
         }
         
+        // --- 4. GÉNÉRATION DIAGRAMME MERMAID ---
         let diagramCode;
         
         async function genereCartoArgument(e, arg) {
             diagramCode = 'flowchart TB\n';
+            
+            // Construction du code Mermaid
             await buildMermaidDiagram(arg);
 
             let resultDiv = d3.select('#resultArgu' + arg['o:id']);
-            resultDiv.html(''); // Nettoyage complet
+            resultDiv.html(''); // Reset complet
 
-            // Création d'un conteneur spécifique pour mermaid
+            // Création conteneur unique
             let mermaidId = 'mermaid-container-' + arg['o:id'];
+            
+            // On ajoute le div Mermaid
             resultDiv.append('div')
                 .attr('class', 'mermaid')
                 .attr('id', mermaidId)
                 .text(diagramCode);
 
-            // Bouton d'export
-            resultDiv.append('button')
+            // On ajoute le bouton (caché par défaut, affiché après rendu)
+            let btn = resultDiv.append('button')
                 .attr('class', 'btn-export')
                 .text('Exporter en JPEG')
+                .style('display', 'none') // Caché tant que pas rendu
                 .on('click', function() {
-                    // On passe directement l'ID du conteneur
-                    exportToJpeg(mermaidId, 'argument_' + arg['o:id']);
+                    exportToJpegCorrected(mermaidId, 'argument_' + arg['o:id']);
                 });
 
-            // Initialisation Mermaid
+            // Initialisation et Rendu Mermaid
             if (typeof mermaid === 'undefined') {
                 let script = document.createElement('script');
                 script.src = 'https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.min.js';
-                script.onload = () => {
-                    mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
-                    mermaid.run();
-                };
+                script.onload = () => runMermaid(btn);
                 document.head.appendChild(script);
             } else {
-                mermaid.run();
+                runMermaid(btn);
             }
         }
 
+        function runMermaid(btn) {
+            mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+            mermaid.run().then(() => {
+                // Une fois le rendu terminé, on affiche le bouton
+                btn.style('display', 'inline-block');
+            });
+        }
+
+        // Logique de construction du diagramme (inchangée)
         async function buildMermaidDiagram(arg, parentId = null) {
             const currentId = 'arg' + arg['o:id'];
-            diagramCode += `    ${currentId}["${arg['o:title']}"]\n`;
+            // Nettoyage des guillemets pour éviter de casser Mermaid
+            const safeTitle = arg['o:title'].replace(/"/g, "'");
+            diagramCode += `    ${currentId}["${safeTitle}"]\n`;
             
             let rootId, txtId, resId, prevIds = [];
             if (arg["argu:generateur"]) {
@@ -120,12 +169,12 @@
                     const element = arg["argu:generateur"][index];
                     if (index == 0) {
                         rootId = 'gen' + element['o:id'];
-                        diagramCode += `    ${rootId}["${element["@value"]}"]\n`;
+                        diagramCode += `    ${rootId}["${element["@value"].replace(/"/g, "'")}"]\n`;
                         diagramCode += `    ${currentId} --> ${rootId}\n`;
                     } else {
                         if (element.type === 'resource') {
                             resId = 'res' + element['o:id'] + '_' + element.value_resource_id;
-                            diagramCode += `    ${resId}@{ shape: docs, label: "${element.display_title}" }\n`;                             
+                            diagramCode += `    ${resId}@{ shape: docs, label: "${element.display_title.replace(/"/g, "'")}" }\n`;                             
                             if (prevIds.length) prevIds.forEach(pi => diagramCode += `    ${pi} --> ${resId}\n`);
                             else diagramCode += `    ${rootId} --> ${resId}\n`;
                             
@@ -164,82 +213,67 @@
             });
         }         
 
-        /**
-         * Fonction robuste pour exporter le diagramme Mermaid en JPEG
-         */
-        function exportToJpeg(containerId, fileName) {
-            console.log("Tentative d'export pour : " + containerId);
-            
+        // --- 5. EXPORT ROBUSTE (CORRECTION DU BUG) ---
+        function exportToJpegCorrected(containerId, fileName) {
             const container = document.getElementById(containerId);
-            if(!container) { console.error("Conteneur introuvable"); return; }
-            
-            const svgElement = container.querySelector('svg');
-            if (!svgElement) { alert("Le diagramme n'est pas encore prêt. Réessayez dans 2 secondes."); return; }
+            if (!container) return alert("Erreur: Diagramme introuvable");
 
-            // 1. Récupérer les dimensions réelles (Bounding Box)
-            const bbox = svgElement.getBoundingClientRect();
+            const svg = container.querySelector('svg');
+            if (!svg) return alert("Erreur: Le SVG n'est pas encore généré");
+
+            // 1. Récupérer les dimensions exactes affichées
+            const bbox = svg.getBoundingClientRect();
             const width = bbox.width;
             const height = bbox.height;
-            console.log("Dimensions détectées : ", width, height);
 
-            if(width === 0 || height === 0) {
-                alert("Erreur de dimension. Le diagramme est invisible.");
-                return;
-            }
-
-            // 2. Cloner le SVG pour le manipuler sans casser l'affichage
-            const clonedSvg = svgElement.cloneNode(true);
+            // 2. Cloner le SVG pour ne pas toucher à l'affichage
+            const clone = svg.cloneNode(true);
             
-            // 3. FORCER les attributs width et height sur le clone (Crucial pour le Blob)
-            clonedSvg.setAttribute("width", width);
-            clonedSvg.setAttribute("height", height);
-            clonedSvg.style.backgroundColor = "white"; // Fond blanc CSS au cas où
+            // 3. Forcer les attributs de taille (CRUCIAL pour que le canvas ne soit pas vide)
+            clone.setAttribute("width", width);
+            clone.setAttribute("height", height);
+            clone.style.backgroundColor = "white"; // S'assurer que le fond n'est pas transparent
 
-            // 4. Sérialiser
-            const serializer = new XMLSerializer();
-            let svgString = serializer.serializeToString(clonedSvg);
+            // 4. Sérialisation avec gestion de l'Unicode (Accents français)
+            const svgString = new XMLSerializer().serializeToString(clone);
+            
+            // 5. Encodage sécurisé en Base64 pour l'Unicode
+            // Cette ligne corrige le bug de "btoa" qui plante sur les accents
+            const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+            const imgSrc = 'data:image/svg+xml;base64,' + svgBase64;
 
-            // 5. Créer l'image
+            // 6. Création de l'image
             const img = new Image();
-            const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
-            const url = URL.createObjectURL(svgBlob);
-            
             img.onload = function() {
-                console.log("Image chargée, création du Canvas...");
                 const canvas = document.createElement('canvas');
-                // On double la résolution pour que ce soit net
-                const scale = 2;
-                canvas.width = width * scale;
-                canvas.height = height * scale;
+                // Haute résolution (x2)
+                canvas.width = width * 2;
+                canvas.height = height * 2;
+                const ctx = canvas.getContext('2d');
+                ctx.scale(2, 2);
+
+                // Fond blanc obligatoire pour JPEG
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(0, 0, width, height);
                 
-                const context = canvas.getContext('2d');
-                context.scale(scale, scale);
-
-                // Fond blanc explicite
-                context.fillStyle = '#FFFFFF';
-                context.fillRect(0, 0, width, height);
-
                 // Dessin
-                context.drawImage(img, 0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
 
                 // Téléchargement
-                const link = document.createElement('a');
-                link.download = fileName + '.jpeg';
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                URL.revokeObjectURL(url);
-                console.log("Export terminé.");
+                const a = document.createElement('a');
+                a.download = fileName + ".jpeg";
+                a.href = canvas.toDataURL("image/jpeg", 0.9);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             };
             
             img.onerror = function(e) {
-                console.error("Erreur lors du chargement de l'image SVG", e);
-                alert("Erreur technique lors de la conversion de l'image.");
+                console.error("Erreur chargement image SVG", e);
+                alert("Impossible de convertir le diagramme. Vérifiez la console.");
             };
 
-            img.src = url;
+            img.src = imgSrc;
         }
     </script>
 </body>
