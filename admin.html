@@ -6,26 +6,51 @@
     <title>GSI2 24-25</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-.gen{
-    color:red;
-    margin:1px;
-}
-.liens{
-    display: flex;
-    justify-content: space-between;
-}
-.result{
-    margin-bottom:10px;
-}
-.argu{
-    border-top: thick double #32a1ce;
-    padding: 6px;
-}
-.etu{
-    border-top: thick double #ce3232;
-    padding: 6px;
-}
-
+        .gen {
+            color: red;
+            margin: 1px;
+        }
+        .liens {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .result {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .argu {
+            border-top: thick double #32a1ce;
+            padding: 6px;
+            margin-top: 10px;
+            list-style: none;
+        }
+        .etu {
+            border-top: thick double #ce3232;
+            padding: 6px;
+            margin-bottom: 20px;
+        }
+        /* Style pour le bouton d'export */
+        .btn-export {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-export:hover {
+            background-color: #45a049;
+        }
+        .mermaid {
+            background-color: white; /* Important pour la lisibilité */
+        }
     </style>
 </head>
 <body>
@@ -43,108 +68,116 @@
                 .data(data)
                 .enter()
                 .append("div")
-                    .attr("id",d=>"etu"+d["Votre identifiant omeka"])
-                    .attr("class","etu");
+                    .attr("id", d => "etu" + d["Votre identifiant omeka"])
+                    .attr("class", "etu");
             
             divEtu.append("h2").text(function(d) { return d["Votre nom et prénom"]; });
+            
             //construction du tableau pour chaque étudiant
-            let liensEtu = divEtu.append('div').attr('id',(d,i)=>"liensEtu"+i).attr('class','liens');         
-            liensEtu.append("a").attr("href",d=>"https://github.com/"+d["Votre login github"]+"/GSI2_SystemInfo_25-26/")
-                .text(d=>d["Votre login github"]+ " sources exercices")
-            liensEtu.append("a").attr("href",d=>"https://"+d["Votre login github"]+".github.io/GSI2_SystemInfo_25-26/test.html")
-                .text(d=>"Page Test")
-            /*
-            liensEtu.append("a").attr("href",d=>"https://"+d["Votre login github"]+".github.io/GSI2_SystemInfo_25-26/arguments.html")
-                .text(d=>"Page arguments")
-            */
+            let liensEtu = divEtu.append('div').attr('id', (d, i) => "liensEtu" + i).attr('class', 'liens');         
+            
+            liensEtu.append("a").attr("href", d => "https://github.com/" + d["Votre login github"] + "/GSI2_SystemInfo_25-26/")
+                .text(d => d["Votre login github"] + " sources exercices");
+            
+            liensEtu.append("a").attr("href", d => "https://" + d["Votre login github"] + ".github.io/GSI2_SystemInfo_25-26/test.html")
+                .text(d => "Page Test");
+            
             liensEtu.append('div').append('button')
                     .text('Voir les arguments')
-                    .on('click',showArguments);
+                    .on('click', showArguments);
 
         }).catch(function(error) {
             console.error('Error loading or parsing data:', error);
         });
 
 
-        function showArguments(e,d){
-            console.log(e,d);
+        function showArguments(e, d) {
+            console.log(e, d);
             //supprimer les anciennes informations
-            d3.select('#etu'+d["Votre identifiant omeka"]).select('ul').remove();
+            d3.select('#etu' + d["Votre identifiant omeka"]).select('ul').remove();
+            
             //récupérer d'omk la lsite des argument d'un participant
-            d3.json("https://argument.generateur.art/api/items?resource_class_id=107&owner_id="+d["Votre identifiant omeka"])
-            .then(rs=>{
+            d3.json("https://argument.generateur.art/api/items?resource_class_id=107&owner_id=" + d["Votre identifiant omeka"])
+            .then(rs => {
                 console.log(rs);
                 //ajouter la liste des argument du participant
-                let ulEtuArgu = d3.select('#etu'+d["Votre identifiant omeka"]).append('ul'),
+                let ulEtuArgu = d3.select('#etu' + d["Votre identifiant omeka"]).append('ul');
+                
                 //ajoute chaque argument
-                argus = ulEtuArgu.selectAll('li').data(rs).enter().append('li')
-                    .attr('class','argu')
-                    .attr('id',d=>'argu'+d['o:id']),
+                let argus = ulEtuArgu.selectAll('li').data(rs).enter().append('li')
+                    .attr('class', 'argu')
+                    .attr('id', d => 'argu' + d['o:id']);
+                
                 //ajouter les infos de l'argument
-                liensArgu = argus.append('div').attr('id',(d,i)=>"liensArgu"+i).attr('class','liens'),         
+                let liensArgu = argus.append('div').attr('id', (d, i) => "liensArgu" + i).attr('class', 'liens');         
                                 //les possibilités génératives
                 //le div des propriétés de l'argument
-                propsArgu = argus.append('div').attr('id',d=>"propArgu"+d['o:id']).attr('class','props'),
-                props = ["o:created","dcterms:description","argu:hasFamilleArgu","argu:hasRegistre","dcterms:subject"],
+                let propsArgu = argus.append('div').attr('id', d => "propArgu" + d['o:id']).attr('class', 'props');
+                let props = ["o:created", "dcterms:description", "argu:hasFamilleArgu", "argu:hasRegistre", "dcterms:subject"];
+                
                 //ajoute les propriétés de l'argument
-                liProps = propsArgu.append('ul').selectAll('li').data(d=>props.map(p=>{
-                    return {'p':p,d:d};
-                })).enter().append('li'),
-                liensVirtual = argus.append('div').attr('id',d=>"virtualArgu"+d['o:id']).attr('class','liens')
-                    .selectAll('span').data(d=>d["argu:generateur"] ? d["argu:generateur"].slice(1) : []).enter().append('span').html(d=>{
-                        if(d.type=='resource')
-                            return "<a target-'_blank' href='"+d['@id'].replace('api/items','admin/item')+"'>"+d.display_title+"</a>";
+                let liProps = propsArgu.append('ul').selectAll('li').data(d => props.map(p => {
+                    return {'p': p, d: d};
+                })).enter().append('li');
+                
+                let liensVirtual = argus.append('div').attr('id', d => "virtualArgu" + d['o:id']).attr('class', 'liens')
+                    .selectAll('span').data(d => d["argu:generateur"] ? d["argu:generateur"].slice(1) : []).enter().append('span').html(d => {
+                        if (d.type == 'resource')
+                            return "<a target='_blank' href='" + d['@id'].replace('api/items', 'admin/item') + "'>" + d.display_title + "</a>";
                         else 
                             return d['@value']; 
                 });
 
-                liProps.selectAll('p').data((d,i)=>Array.isArray(d.d[d.p])?d.d[d.p]:[d.d[d.p]]).enter().append('p').html(d=>{
-                    if(!d)return 'vide';
-                    let s = (d.property_label ? d.property_label+' = ' : '')+(d.display_title ? d.display_title : d["@value"]);
-                    return '<span>'+s+'</span>'
-                })
+                liProps.selectAll('p').data((d, i) => Array.isArray(d.d[d.p]) ? d.d[d.p] : [d.d[d.p]]).enter().append('p').html(d => {
+                    if (!d) return 'vide';
+                    let s = (d.property_label ? d.property_label + ' = ' : '') + (d.display_title ? d.display_title : d["@value"]);
+                    return '<span>' + s + '</span>'
+                });
 
                 //Ajoute le lien vers l'argument dans omk
                 liensArgu.append('a')
-                    .attr('href',d=>'https://argument.generateur.art/admin/item/'+d['o:id'])
-                    .attr('target','_blanck')
-                    .text(d=>d["o:title"]);
+                    .attr('href', d => 'https://argument.generateur.art/admin/item/' + d['o:id'])
+                    .attr('target', '_blank')
+                    .text(d => d["o:title"]);
+                
                 //le bouton de génération
                 liensArgu.append('button')
                     .text('Générer un argument')
-                    .on('click',genereArgument);
+                    .on('click', genereArgument);
+                
                 //le bouton pour tout générer
                 liensArgu.append('button')
                     .text('Générer la carte des arguments')
-                    .on('click',genereCartoArgument);
+                    .on('click', genereCartoArgument);
 
                 //et le div de résultat
-                argus.append('div').attr('id',d=>"resultArgu"+d['o:id']).attr('class','result');
+                argus.append('div').attr('id', d => "resultArgu" + d['o:id']).attr('class', 'result');
             })
         }
 
-        function genereArgument(e,arg){
-            let argu = d3.select('#resultArgu'+arg['o:id']);
+        function genereArgument(e, arg) {
+            let argu = d3.select('#resultArgu' + arg['o:id']);
             argu.select('div').remove();            
             let divTxtArgu = argu.append('div');
+            
             divTxtArgu.selectAll('span').data(arg["argu:generateur"]).enter().append('span')
-                .attr('id',(g,i)=>{
-                    g.idSpan = 'span'+arg['o:id']+'_'+i;
+                .attr('id', (g, i) => {
+                    g.idSpan = 'span' + arg['o:id'] + '_' + i;
                     return g.idSpan;
                 })
-                .text((g,i)=>{
-                    if(i>0){
-                        if(g.type=='literal')return g['@value'];
-                        if(g.type=='resource'){
+                .text((g, i) => {
+                    if (i > 0) {
+                        if (g.type == 'literal') return g['@value'];
+                        if (g.type == 'resource') {
                             getAleaDescription(g);
                         }
                     }
-                })
-
+                });
         }
         
         let diagramCode, nodeIds;
-        async function genereCartoArgument(e,arg){
+        
+        async function genereCartoArgument(e, arg) {
 
             diagramCode = 'flowchart TB\n';
             nodeIds = new Set();
@@ -153,9 +186,25 @@
             await buildMermaidDiagram(arg);
 
             // Créer un conteneur pour le diagramme
-            let resultDiv = d3.select('#resultArgu'+arg['o:id']);
-            resultDiv.select('div').remove();
-            let mermaidDiv = resultDiv.append('div').attr('class', 'mermaid').text(diagramCode);
+            let resultDiv = d3.select('#resultArgu' + arg['o:id']);
+            
+            // Nettoyage complet du div resultat avant d'ajouter le nouveau
+            resultDiv.html(''); 
+
+            // Création d'un div unique pour le mermaid
+            let mermaidId = 'mermaid-container-' + arg['o:id'];
+            let mermaidDiv = resultDiv.append('div')
+                .attr('class', 'mermaid')
+                .attr('id', mermaidId)
+                .text(diagramCode);
+
+            // AJOUT: Bouton d'exportation
+            resultDiv.append('button')
+                .attr('class', 'btn-export')
+                .text('Exporter en JPEG')
+                .on('click', function() {
+                    exportToJpeg(mermaidId, 'argument_' + arg['o:id']);
+                });
 
             // Charger et afficher Mermaid
             if (typeof mermaid === 'undefined') {
@@ -164,8 +213,7 @@
                 script.onload = () => {
                     mermaid.contentLoaderFunction = undefined;
                     mermaid.initialize({ startOnLoad: true });
-                    mermaid.contentLoaderFunction = (content) => content;
-                    mermaid.run();
+                    mermaid.run(); // Lance le rendu
                 };
                 document.head.appendChild(script);
             } else {
@@ -186,49 +234,47 @@
             if (arg["argu:generateur"]) {
                 for (let index = 0; index < arg["argu:generateur"].length; index++) {
                     const element = arg["argu:generateur"][index];
-                    if(index==0){
+                    if (index == 0) {
                         rootId = 'gen' + element['o:id'];
                         diagramCode += `    ${rootId}["${element["@value"]}"]\n`;
                         diagramCode += `    ${currentId} --> ${rootId}\n`;
-                    }else{
+                    } else {
                         if (element.type === 'resource') {
-                            resId = 'res' + element['o:id']+'_'+element.value_resource_id;
-                            //diagramCode += `    subgraph "${element.value_resource_id}"\n`;
-                            //diagramCode += `    ${resId}["${element.display_title}"]\n`;
-                            diagramCode += `    ${resId}@{ shape: docs, label: "${element.display_title}" }\n`;                            
-                            if(prevIds.length){
-                                prevIds.forEach(pi=>{
+                            resId = 'res' + element['o:id'] + '_' + element.value_resource_id;
+                            diagramCode += `    ${resId}@{ shape: docs, label: "${element.display_title}" }\n`;                             
+                            if (prevIds.length) {
+                                prevIds.forEach(pi => {
                                     diagramCode += `    ${pi} --> ${resId}\n`;
                                 })
-                            }else diagramCode += `    ${rootId} --> ${resId}\n`;
+                            } else diagramCode += `    ${rootId} --> ${resId}\n`;
+                            
                             //charge les possibilités
-                            let posis = await d3.json(element['@id']);
-                            prevIds = [];
-                            posis[["dcterms:description"]].forEach((p,i) => {
-                                let posiId = 'posi' + element.value_resource_id+'_'+i;
-                                diagramCode += `    ${posiId}["${p['@value']}"]\n`;
-                                diagramCode += `    ${resId} --> ${posiId}\n`;
-                                prevIds.push(posiId);                                
-                            });
-                            //diagramCode += `    end \n`;
-                                                        
-                        }else{
-                            /*
-                            txtIdVide = 'txtVide' + element['o:id']+'_'+index;
-                            diagramCode += `    ${txtIdVide}["-"]\n`;
-                            diagramCode += `    ${rootId} --> ${txtIdVide}\n`;
-                            txtId = 'txt' + element['o:id']+'_'+index;
-                            diagramCode += `    ${txtId}["${element["@value"]}"]\n`;
-                            diagramCode += `    ${txtIdVide} --> ${txtId}\n`;
-                            */
-                            txtId = 'txt_'+index;
-                            //diagramCode += `    ${txtId}["${element["@value"]}"]\n`;
-                            diagramCode += `    ${txtId}@{ shape: stadium, label: "${element["@value"]}" }\n`;
-                            if(prevIds.length){
-                                prevIds.forEach(pi=>{
+                            try {
+                                let posis = await d3.json(element['@id']);
+                                prevIds = [];
+                                if (posis && posis["dcterms:description"]) {
+                                    posis["dcterms:description"].forEach((p, i) => {
+                                        let posiId = 'posi' + element.value_resource_id + '_' + i;
+                                        // Nettoyage des caractères spéciaux pour éviter les erreurs Mermaid
+                                        let safeLabel = p['@value'].replace(/"/g, "'"); 
+                                        diagramCode += `    ${posiId}["${safeLabel}"]\n`;
+                                        diagramCode += `    ${resId} --> ${posiId}\n`;
+                                        prevIds.push(posiId);                                     
+                                    });
+                                }
+                            } catch (err) {
+                                console.log("Erreur chargement sous-ressource", err);
+                            }
+                                                                                                
+                        } else {
+                            txtId = 'txt_' + index + '_' + arg['o:id']; // ID unique pour éviter conflits si plusieurs diagrammes
+                            let safeValue = element["@value"].replace(/"/g, "'");
+                            diagramCode += `    ${txtId}@{ shape: stadium, label: "${safeValue}" }\n`;
+                            if (prevIds.length) {
+                                prevIds.forEach(pi => {
                                     diagramCode += `    ${pi} --> ${txtId}\n`;
                                 })
-                            }else diagramCode += `    ${rootId} --> ${txtId}\n`;
+                            } else diagramCode += `    ${rootId} --> ${txtId}\n`;
                             prevIds = [];
                             prevIds.push(txtId);
                         }
@@ -242,18 +288,82 @@
         }
 
 
-        function getAleaDescription(d){
+        function getAleaDescription(d) {
             d3.json(d['@id'])
-                .then(rs=>{
+                .then(rs => {
                     //récupère les description des la ressource
                     let listeDesc = rs['dcterms:description'],
                     //choisi une description dans la liste
-                    alea = d3.randomInt(listeDesc.length-1)(), 
+                    alea = Math.floor(Math.random() * listeDesc.length), 
                     choixDesc = listeDesc[alea];
                     //affiche le description choisie
-                    d3.select('#'+d.idSpan).attr("class","gen").text(choixDesc['@value']+" ("+(alea+1)+"/"+listeDesc.length+") ");
+                    d3.select('#' + d.idSpan).attr("class", "gen").text(choixDesc['@value'] + " (" + (alea + 1) + "/" + listeDesc.length + ") ");
                 });
         }         
+
+        /**
+         * Fonction pour exporter le diagramme Mermaid en JPEG
+         * @param {string} elementId - L'ID du div contenant le diagramme
+         * @param {string} fileName - Le nom du fichier à télécharger
+         */
+        function exportToJpeg(elementId, fileName) {
+            // 1. Récupérer l'élément SVG généré par Mermaid
+            const container = document.getElementById(elementId);
+            if(!container) return;
+            
+            const svgElement = container.querySelector('svg');
+
+            if (!svgElement) {
+                alert("Le diagramme n'est pas encore généré ou introuvable.");
+                return;
+            }
+
+            // 2. Sérialiser le SVG en chaîne de caractères
+            const serializer = new XMLSerializer();
+            let svgString = serializer.serializeToString(svgElement);
+
+            // 3. Créer une image HTML à partir du SVG
+            const img = new Image();
+            // On encode le SVG en base64
+            const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                // 4. Créer un Canvas
+                const canvas = document.createElement('canvas');
+                // Récupérer la taille réelle du diagramme
+                const bbox = svgElement.getBoundingClientRect();
+                
+                // Multiplier par 2 pour une meilleure résolution (optionnel mais recommandé)
+                const scale = 2;
+                canvas.width = bbox.width * scale;
+                canvas.height = bbox.height * scale;
+                
+                const context = canvas.getContext('2d');
+                context.scale(scale, scale);
+
+                // 5. IMPORTANT : Fond blanc (car JPEG ne gère pas la transparence)
+                context.fillStyle = '#FFFFFF';
+                context.fillRect(0, 0, bbox.width, bbox.height);
+
+                // 6. Dessiner l'image SVG sur le canvas
+                context.drawImage(img, 0, 0);
+
+                // 7. Créer le lien de téléchargement
+                const link = document.createElement('a');
+                link.download = fileName + '.jpeg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9); // Qualité 0.9
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Libérer la mémoire
+                URL.revokeObjectURL(url);
+            };
+
+            img.src = url;
+        }
 
     </script>
 </body>
